@@ -1,6 +1,7 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { Tarefa } from "./tarefa";
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -19,12 +20,10 @@ export class App implements OnInit {
     this.apiURL = 'https://tarefasapijoaopedro252959lucasmoraes2528.onrender.com';
   }
 
-  // ✅ Carrega ao iniciar
-  ngOnInit() {
-    this.READ_tarefas();
+  async ngOnInit(): Promise<void> {
+    await this.READ_tarefas();
   }
 
-  // ✅ CREATE corrigido
   CREATE_tarefa(descricaoNovaTarefa: string) {
     const novaTarefa = new Tarefa(descricaoNovaTarefa, false);
 
@@ -32,36 +31,33 @@ export class App implements OnInit {
       .subscribe(() => this.READ_tarefas());
   }
 
-  // ✅ READ ok
- READ_tarefas(retry = true) {
-  this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`)
-    .subscribe({
-      next: (resultado) => {
-        this.arrayDeTarefas.set(resultado);
-      },
-      error: (erro) => {
-        console.error("Erro ao carregar tarefas:", erro);
+  async READ_tarefas(retry = true): Promise<void> {
+    try {
+      const resultado = await firstValueFrom(
+        this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`)
+      );
 
-        // tenta novamente depois de 2 segundos
-        if (retry) {
-          setTimeout(() => this.READ_tarefas(false), 2000);
-        }
+      this.arrayDeTarefas.set(resultado);
+    } catch (erro) {
+      console.error("Erro ao carregar tarefas:", erro);
+
+      if (retry) {
+        setTimeout(() => {
+          this.READ_tarefas(false);
+        }, 2000);
       }
-    });
-}
+    }
+  }
 
-  // ✅ DELETE corrigido (sem indexOf)
   DELETE_tarefa(tarefa: Tarefa) {
     this.http.delete<Tarefa>(`${this.apiURL}/api/delete/${tarefa._id}`)
       .subscribe(() => this.READ_tarefas());
   }
 
-  // ✅ UPDATE corrigido (sem indexOf)
   UPDATE_tarefa(tarefa: Tarefa) {
     this.http.patch<Tarefa>(
       `${this.apiURL}/api/update/${tarefa._id}`,
       tarefa
     ).subscribe(() => this.READ_tarefas());
   }
-
 }
