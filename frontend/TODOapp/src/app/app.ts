@@ -1,4 +1,5 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Tarefa } from "./tarefa";
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -10,18 +11,21 @@ import { firstValueFrom } from 'rxjs';
   styleUrl: './app.css'
 })
 export class App implements OnInit {
-
   protected readonly title = signal('TODOapp');
 
   arrayDeTarefas = signal<Tarefa[]>([]);
   apiURL: string;
+
+  private platformId = inject(PLATFORM_ID);
 
   constructor(private http: HttpClient) {
     this.apiURL = 'https://tarefasapijoaopedro252959lucasmoraes2528.onrender.com';
   }
 
   async ngOnInit(): Promise<void> {
-    await this.READ_tarefas();
+    if (isPlatformBrowser(this.platformId)) {
+      await this.READ_tarefas();
+    }
   }
 
   CREATE_tarefa(descricaoNovaTarefa: string) {
@@ -34,7 +38,9 @@ export class App implements OnInit {
   async READ_tarefas(retry = true): Promise<void> {
     try {
       const resultado = await firstValueFrom(
-        this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`)
+        this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`, {
+          headers: { 'Cache-Control': 'no-cache' }
+        })
       );
 
       this.arrayDeTarefas.set(resultado);
