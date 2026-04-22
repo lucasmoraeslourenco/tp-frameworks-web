@@ -17,7 +17,6 @@ export class App implements OnInit {
 
   constructor(private http: HttpClient) {
     this.apiURL = 'https://tarefasapijoaopedro252959lucasmoraes2528.onrender.com';
-    this.READ_tarefas();
   }
 
   // ✅ Carrega ao iniciar
