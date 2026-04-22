@@ -16,7 +16,7 @@ export class App implements OnInit {
   apiURL: string;
 
   constructor(private http: HttpClient) {
-    this.apiURL = 'https://vilacio255047.up.railway.app';
+    this.apiURL = 'https://tarefasapilucas252838.onrender.com';
     this.READ_tarefas();
   }
 
