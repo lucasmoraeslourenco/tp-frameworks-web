@@ -3,6 +3,36 @@ const router = express.Router()
 module.exports = router;
 const modeloTarefa = require('../models/tarefa');
 
+//Autorizacao
+function verificaUsuarioSenha(req, res, next) {
+ if (req.body.nome !== 'branqs' || req.body.senha !== '1234') {
+ return res.status(401).json({ auth: false, message: 'Usuario ou Senha incorreta' });
+ }
+ next();
+}
+
+//Autenticacao
+var jwt = require('jsonwebtoken');
+router.post('/login', (req, res, next) => {
+ if (req.body.nome === 'branqs' && req.body.senha === '1234') {
+ const token = jwt.sign({ id: req.body.nome }, 'segredo', { expiresIn: 300 });
+ return res.json({ auth: true, token: token });
+ }
+ res.status(500).json({ message: 'Login invalido!' });
+})
+
+//Nova forma de Autorizacao
+function verificaJWT(req, res, next) {
+ const token = req.headers['id-token'];
+ if (!token) return res.status(401).json({
+ auth: false, message: 'Token nao fornecido'
+ });
+ jwt.verify(token,'segredo', function (err, decoded) {
+ if (err) return res.status(500).json({ auth: false, message: 'Falha !' });
+ next();
+ });
+}
+
 router.post('/post', async (req, res) => {
     const objetoTarefa = new modeloTarefa({
     descricao: req.body.descricao,
@@ -51,6 +81,7 @@ router.patch('/update/:id', async (req, res) => {
     res.status(400).json({ message: error.message })
     }
    })
+   
    
    
    
