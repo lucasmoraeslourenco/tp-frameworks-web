@@ -15,37 +15,62 @@ export class App implements OnInit {
 
   arrayDeTarefas = signal<Tarefa[]>([]);
   apiURL: string;
+  usuarioLogado = signal(false);
+
+  tokenJWT = '{ "token": "" }';
+
 
   private platformId = inject(PLATFORM_ID);
 
   constructor(private http: HttpClient) {
-    this.apiURL = 'https://tarefasapijoaopedro252959lucasmoraes2528.onrender.com';
+    this.apiURL = 'https://apitarefas-vilacio255047-sandro253897.up.railway.app';
+  }
+
+  Login(username: string, password: string) {
+    var credenciais = { "nome": username, "senha": password }
+  
+    this.http.post(`${this.apiURL}/api/login`, credenciais).subscribe(resultado => {
+      this.tokenJWT = JSON.stringify(resultado);
+  
+      // 👉 ESSENCIAL
+      this.READ_tarefas();
+    });
   }
 
   async ngOnInit(): Promise<void> {
     if (isPlatformBrowser(this.platformId)) {
-      await this.READ_tarefas();
+
     }
   }
 
   CREATE_tarefa(descricaoNovaTarefa: string) {
     const novaTarefa = new Tarefa(descricaoNovaTarefa, false);
+    const token = JSON.parse(this.tokenJWT).token;
 
-    this.http.post<Tarefa>(`${this.apiURL}/api/post`, novaTarefa)
-      .subscribe(() => this.READ_tarefas());
+    this.http.post<Tarefa>(`${this.apiURL}/api/post`, novaTarefa, {
+      headers: { 'id-token': token }
+    }).subscribe(() => this.READ_tarefas());
   }
 
   async READ_tarefas(retry = true): Promise<void> {
     try {
+      const token = JSON.parse(this.tokenJWT).token;
+
       const resultado = await firstValueFrom(
         this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`, {
-          headers: { 'Cache-Control': 'no-cache' }
+          headers: {
+            'Cache-Control': 'no-cache',
+            'id-token': token   // 👈 AQUI ESTÁ O SEGREDO
+          }
         })
       );
 
       this.arrayDeTarefas.set(resultado);
+      this.usuarioLogado.set(true);
+
     } catch (erro) {
       console.error("Erro ao carregar tarefas:", erro);
+      this.usuarioLogado.set(false);
 
       if (retry) {
         setTimeout(() => {
@@ -56,14 +81,23 @@ export class App implements OnInit {
   }
 
   DELETE_tarefa(tarefa: Tarefa) {
-    this.http.delete<Tarefa>(`${this.apiURL}/api/delete/${tarefa._id}`)
-      .subscribe(() => this.READ_tarefas());
+    const token = JSON.parse(this.tokenJWT).token;
+
+    this.http.delete<Tarefa>(`${this.apiURL}/api/delete/${tarefa._id}`, {
+      headers: { 'id-token': token }
+    }).subscribe(() => this.READ_tarefas());
   }
 
   UPDATE_tarefa(tarefa: Tarefa) {
+    const token = JSON.parse(this.tokenJWT).token;
+
     this.http.patch<Tarefa>(
       `${this.apiURL}/api/update/${tarefa._id}`,
-      tarefa
+      tarefa,
+      {
+        headers: { 'id-token': token }
+      }
     ).subscribe(() => this.READ_tarefas());
   }
 }
+
