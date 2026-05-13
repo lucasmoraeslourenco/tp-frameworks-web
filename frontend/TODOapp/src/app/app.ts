@@ -16,9 +16,9 @@ export class App implements OnInit {
   arrayDeTarefas = signal<Tarefa[]>([]);
   apiURL: string;
   usuarioLogado = signal(false);
+  roleUsuario = signal('');
 
   tokenJWT = '{ "token": "" }';
-
 
   private platformId = inject(PLATFORM_ID);
 
@@ -26,23 +26,25 @@ export class App implements OnInit {
     this.apiURL = 'https://apitarefas-vilacio255047-sandro253897.up.railway.app';
   }
 
+  async ngOnInit(): Promise<void> {
+    if (isPlatformBrowser(this.platformId)) { }
+  }
+
+  // ─── Login ──────────────────────────────────────────────────────────────────
   Login(username: string, password: string) {
-    var credenciais = { "nome": username, "senha": password }
-  
-    this.http.post(`${this.apiURL}/api/login`, credenciais).subscribe(resultado => {
-      this.tokenJWT = JSON.stringify(resultado);
-  
-      // 👉 ESSENCIAL
-      this.READ_tarefas();
+    var credenciais = { "nome": username, "senha": password };
+
+    this.http.post(`${this.apiURL}/api/login`, credenciais).subscribe({
+      next: (resultado: any) => {
+        this.tokenJWT = JSON.stringify(resultado);
+        this.roleUsuario.set(resultado.role);
+        this.READ_tarefas();
+      },
+      error: () => alert('Usuário ou senha inválidos!')
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    if (isPlatformBrowser(this.platformId)) {
-
-    }
-  }
-
+  // ─── CRUD Tarefas ────────────────────────────────────────────────────────────
   CREATE_tarefa(descricaoNovaTarefa: string) {
     const novaTarefa = new Tarefa(descricaoNovaTarefa, false);
     const token = JSON.parse(this.tokenJWT).token;
@@ -58,10 +60,7 @@ export class App implements OnInit {
 
       const resultado = await firstValueFrom(
         this.http.get<Tarefa[]>(`${this.apiURL}/api/getAll`, {
-          headers: {
-            'Cache-Control': 'no-cache',
-            'id-token': token   // 👈 AQUI ESTÁ O SEGREDO
-          }
+          headers: { 'Cache-Control': 'no-cache', 'id-token': token }
         })
       );
 
@@ -73,9 +72,7 @@ export class App implements OnInit {
       this.usuarioLogado.set(false);
 
       if (retry) {
-        setTimeout(() => {
-          this.READ_tarefas(false);
-        }, 2000);
+        setTimeout(() => this.READ_tarefas(false), 2000);
       }
     }
   }
@@ -94,10 +91,62 @@ export class App implements OnInit {
     this.http.patch<Tarefa>(
       `${this.apiURL}/api/update/${tarefa._id}`,
       tarefa,
-      {
-        headers: { 'id-token': token }
-      }
+      { headers: { 'id-token': token } }
     ).subscribe(() => this.READ_tarefas());
   }
-}
 
+  // ─── Gerenciamento de Usuários (ADM) ────────────────────────────────────────
+  listaUsuarios = signal<any[]>([]);
+  painelAdminAberto = signal(false);
+
+  toggleAdminPainel() {
+    this.painelAdminAberto.set(!this.painelAdminAberto());
+    if (this.painelAdminAberto() && this.listaUsuarios().length === 0) {
+      this.LISTAR_usuarios();
+    }
+  }
+
+  LISTAR_usuarios() {
+    const token = JSON.parse(this.tokenJWT).token;
+    this.http.get<any[]>(`${this.apiURL}/api/usuarios`, {
+      headers: { 'id-token': token }
+    }).subscribe({
+      next: (res) => this.listaUsuarios.set(res),
+      error: (err) => console.error('Erro ao listar usuarios:', err)
+    });
+  }
+
+  CRIAR_usuario(nome: string, senha: string, role: string) {
+    if (!nome || !senha) return;
+    const token = JSON.parse(this.tokenJWT).token;
+    this.http.post(`${this.apiURL}/api/usuarios`, { nome, senha, role }, {
+      headers: { 'id-token': token }
+    }).subscribe({
+      next: () => { alert('Usuário criado!'); this.LISTAR_usuarios(); },
+      error: (err) => alert('Erro: ' + err.error.message)
+    });
+  }
+
+  EDITAR_usuario(id: string, nome: string) {
+    const novoNome = prompt('Novo nome:', nome);
+    if (!novoNome) return;
+    const token = JSON.parse(this.tokenJWT).token;
+    this.http.patch(`${this.apiURL}/api/usuarios/${id}`, { nome: novoNome }, {
+      headers: { 'id-token': token }
+    }).subscribe({
+      next: () => this.LISTAR_usuarios(),
+      error: (err) => alert('Erro: ' + err.error.message)
+    });
+  }
+
+  DELETAR_usuario(id: string) {
+    if (!confirm('Deseja remover este usuário?')) return;
+    const token = JSON.parse(this.tokenJWT).token;
+    this.http.delete(`${this.apiURL}/api/usuarios/${id}`, {
+      headers: { 'id-token': token }
+    }).subscribe({
+      next: () => { alert('Usuário removido!'); this.LISTAR_usuarios(); },
+      error: (err) => alert('Erro: ' + err.error.message)
+    });
+  }
+}
