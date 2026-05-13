@@ -40,7 +40,8 @@ export class App implements OnInit {
         this.roleUsuario.set(resultado.role);
         this.READ_tarefas();
       },
-      error: () => alert('Usuário ou senha inválidos!')
+      error: (err) => alert('Erro: ' + JSON.stringify(err.error))
+      //error: () => alert('Usuário ou senha inválidos!')
     });
   }
 
