@@ -23,7 +23,7 @@ export class App implements OnInit {
   private platformId = inject(PLATFORM_ID);
 
   constructor(private http: HttpClient) {
-   this.apiURL = 'https://tarefasapijoaopedro252959lucasmoraes2528.onrender.com';
+    this.apiURL = 'https://apitarefas-vilacio255047-sandro253897.up.railway.app';
   }
 
   async ngOnInit(): Promise<void> {
@@ -135,6 +135,18 @@ export class App implements OnInit {
       headers: { 'id-token': token }
     }).subscribe({
       next: () => this.LISTAR_usuarios(),
+      error: (err) => alert('Erro: ' + err.error.message)
+    });
+  }
+
+  ALTERAR_SENHA_usuario(id: string) {
+    const novaSenha = prompt('Nova senha:');
+    if (!novaSenha) return;
+    const token = JSON.parse(this.tokenJWT).token;
+    this.http.patch(`${this.apiURL}/api/usuarios/${id}`, { senha: novaSenha }, {
+      headers: { 'id-token': token }
+    }).subscribe({
+      next: () => alert('Senha alterada!'),
       error: (err) => alert('Erro: ' + err.error.message)
     });
   }
