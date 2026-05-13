@@ -57,6 +57,7 @@
             <span><strong>{{ u.nome }}</strong> — {{ u.role }}</span>
             <span>
               <button class="btn" (click)="EDITAR_usuario(u._id, u.nome)">Editar</button>
+              <button class="btn" (click)="ALTERAR_SENHA_usuario(u._id)">Senha</button>
               <button class="btn btn-warn" (click)="DELETAR_usuario(u._id)">Remover</button>
             </span>
           </li>
@@ -68,5 +69,3 @@
   </div>
 
 </div>
-
-
