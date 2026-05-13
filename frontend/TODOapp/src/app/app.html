@@ -1,24 +1,72 @@
+
 <div class="main">
-  <h1>lucas de moraes 252838, joão pedro da silva 252959</h1>
-  <div *ngIf="usuarioLogado()">
-  <input class="lg-text-input" #campoNovoItem
-    (keyup.enter)="CREATE_tarefa(campoNovoItem.value); campoNovoItem.value=''" />
-  <button class="btn-primary" (click)="CREATE_tarefa(campoNovoItem.value); campoNovoItem.value=''">
-    Adicionar Tarefa</button>
-  <ul>
-    <li *ngFor="let tarefaDoLoop of arrayDeTarefas()">
-      <app-item [tarefa]="tarefaDoLoop" (remover)="DELETE_tarefa($event)"
-        (modificaTarefa)="UPDATE_tarefa(tarefaDoLoop)">>
-      </app-item>
-    </li>
-  </ul>
-    </div>
-    <div *ngIf="!usuarioLogado()">
+
+  <!-- ===== TELA DE LOGIN ===== -->
+  <div *ngIf="!usuarioLogado()">
+    <h1>lucas de moraes 252838, joão pedro da silva 252959</h1>
+    <h2>Login</h2>
     <input #username placeholder="nome" class="lg-text-input" />
     <BR>
-    <input #password placeholder="senha" class="lg-text-input" />
-    <button class="btn-primary" (click)="Login(username.value, password.value)">Login</button>
+    <input #password type="password" placeholder="senha" class="lg-text-input" />
+    <button class="btn-primary" (click)="Login(username.value, password.value)">Entrar</button>
+  </div>
+
+  <!-- ===== TELA PRINCIPAL (logado) ===== -->
+  <div *ngIf="usuarioLogado()">
+    <h1>lucas de moraes 252838, joão pedro da silva 252959</h1>
+
+    <!-- Adicionar tarefa -->
+    <input class="lg-text-input" #campoNovoItem
+      (keyup.enter)="CREATE_tarefa(campoNovoItem.value); campoNovoItem.value=''" />
+    <button class="btn-primary"
+      (click)="CREATE_tarefa(campoNovoItem.value); campoNovoItem.value=''">
+      Adicionar Tarefa
+    </button>
+
+    <!-- Lista de tarefas -->
+    <ul>
+      <li *ngFor="let tarefaDoLoop of arrayDeTarefas()">
+        <app-item [tarefa]="tarefaDoLoop" (remover)="DELETE_tarefa($event)"
+          (modificaTarefa)="UPDATE_tarefa(tarefaDoLoop)">
+        </app-item>
+      </li>
+    </ul>
+
+    <!-- ===== PAINEL ADM ===== -->
+    <div *ngIf="roleUsuario() === 'adm'" style="margin-top: 2rem; border-top: 2px solid #ccc; padding-top: 1rem;">
+
+      <button class="btn-primary" (click)="toggleAdminPainel()">
+        {{ painelAdminAberto() ? '▲ Fechar Painel Admin' : '▼ Abrir Painel Admin' }}
+      </button>
+
+      <div *ngIf="painelAdminAberto()">
+        <h3>Gerenciar Usuários</h3>
+
+        <!-- Criar novo usuário -->
+        <input #newNome placeholder="Nome" class="lg-text-input" />
+        <input #newSenha type="password" placeholder="Senha" class="lg-text-input" />
+        <button class="btn-primary"
+          (click)="CRIAR_usuario(newNome.value, newSenha.value, 'user'); newNome.value=''; newSenha.value=''">
+          Criar Usuário
+        </button>
+
+        <!-- Lista de usuários -->
+        <ul style="margin-top: 1rem;">
+          <li *ngFor="let u of listaUsuarios()"
+            style="display:flex; justify-content:space-between; align-items:center; padding: 0.4rem 0; border-bottom: 1px solid #eee;">
+            <span><strong>{{ u.nome }}</strong> — {{ u.role }}</span>
+            <span>
+              <button class="btn" (click)="EDITAR_usuario(u._id, u.nome)">Editar</button>
+              <button class="btn btn-warn" (click)="DELETAR_usuario(u._id)">Remover</button>
+            </span>
+          </li>
+        </ul>
+
+      </div>
     </div>
+
+  </div>
+
 </div>
 
 
